@@ -7,8 +7,19 @@ import { prisma } from "@/lib/prisma";
 
 export const COOKIE_NAME = "sessao";
 
+// "||" (não "??") de propósito: uma SESSION_SECRET configurada como string
+// vazia — o que já aconteceu nesta implantação, herdada de outro projeto —
+// não deve virar uma chave de assinatura de zero bytes (o que faz o
+// SignJWT falhar com "Zero-length key is not supported"), então cai no
+// mesmo fallback de uma variável ausente.
+const sessionSecretConfigurada = process.env.SESSION_SECRET || "";
+if (!sessionSecretConfigurada && process.env.NODE_ENV === "production") {
+  throw new Error(
+    "SESSION_SECRET não está configurada (ou está vazia) em produção. Defina uma nas Environment Variables do projeto."
+  );
+}
 const secret = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? "chave-de-desenvolvimento-insegura-troque-isso"
+  sessionSecretConfigurada || "chave-de-desenvolvimento-insegura-troque-isso"
 );
 
 export type Papel = "ADMIN" | "MONTADOR";
