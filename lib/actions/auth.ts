@@ -45,9 +45,10 @@ export async function loginAction(formData: FormData) {
 
 /**
  * Login do administrador via Google (Firebase Auth no navegador). O token
- * chega já assinado pelo Google; a verificação e a checagem contra
- * ADMIN_EMAILS acontecem no servidor (lib/googleAuth.ts) — nunca confiamos
- * em e-mail/nome que o navegador diga ter.
+ * chega já assinado pelo Google; a verificação da assinatura e a checagem
+ * de autorização (regras do Firestore) acontecem no servidor
+ * (lib/googleAuth.ts) — nunca confiamos em e-mail/nome que o navegador diga
+ * ter.
  */
 export async function loginComGoogleAction(
   idToken: string,
@@ -58,17 +59,25 @@ export async function loginComGoogleAction(
 
   const { email, nome } = resultado;
 
-  let user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    user = await prisma.user.create({
-      data: { nome, email, role: "ADMIN", ativo: true, comissaoPadrao: 0 },
-    });
-  } else if (!user.ativo) {
-    return { ok: false, erro: "Este usuário está desativado." };
-  }
+  try {
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: { nome, email, role: "ADMIN", ativo: true, comissaoPadrao: 0 },
+      });
+    } else if (!user.ativo) {
+      return { ok: false, erro: "Este usuário está desativado." };
+    }
 
-  await createSession({ sub: user.id, role: user.role, nome: user.nome });
-  return { ok: true, destino: destinoSeguro(proximo ?? null, "/admin") };
+    await createSession({ sub: user.id, role: user.role, nome: user.nome });
+    return { ok: true, destino: destinoSeguro(proximo ?? null, "/admin") };
+  } catch (e) {
+    console.error("loginComGoogleAction: falha ao criar sessão", e);
+    return {
+      ok: false,
+      erro: "Login confirmado, mas houve um problema ao abrir sua sessão. Tente novamente.",
+    };
+  }
 }
 
 export async function logoutAction() {
