@@ -3,8 +3,14 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "sessao";
+// "||" (não "??") de propósito, igual em lib/auth.ts: uma SESSION_SECRET
+// configurada como string vazia não pode virar uma chave de assinatura de
+// zero bytes (jose recusa com "Zero-length key is not supported"). Sem essa
+// mesma regra aqui, esse cenário faz o middleware nunca conseguir verificar
+// o cookie de sessão (mesmo um criado com a chave de fallback do
+// lib/auth.ts) e todo mundo cai num loop de redirecionamento para /login.
 const secret = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? "chave-de-desenvolvimento-insegura-troque-isso"
+  process.env.SESSION_SECRET || "chave-de-desenvolvimento-insegura-troque-isso"
 );
 
 async function lerSessao(req: NextRequest) {

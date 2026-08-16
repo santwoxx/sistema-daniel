@@ -7,9 +7,12 @@ individual para cada montador.
 > **Base personalizável.** Este repositório não tem nenhuma marca, empresa ou
 > dado real embutido — toda a identidade visual (nome, cores, textos) e a
 > integração com Firebase/banco de dados vêm de configuração (veja
-> `.env.example`), e `npm run db:seed` popula o sistema com uma equipe,
-> lojas e montagens de demonstração fictícias, prontas para apresentar. Use
-> como ponto de partida para uma implantação nova por cliente.
+> `.env.example`). O banco começa vazio de propósito: sem equipe, lojas,
+> montagens ou usuário admin pré-cadastrados. O primeiro administrador entra
+> pelo Google (a conta é criada automaticamente nesse primeiro login
+> autorizado — veja a seção do Firebase abaixo) e cadastra o resto pela
+> própria interface. Use como ponto de partida para uma implantação nova por
+> cliente.
 
 ## O que o sistema faz
 
@@ -56,14 +59,18 @@ Pré-requisitos:
   `DATABASE_URL` e `DIRECT_URL`.
 
 ```bash
-cd sistema-montador
-npm install                       # instala as dependências (só precisa fazer uma vez)
+npm install                       # instala as dependências e gera o Prisma Client (só precisa fazer uma vez)
 npx prisma migrate deploy         # cria as tabelas no banco (só precisa fazer uma vez)
-npm run db:seed                   # cria o usuário administrador padrão
 npm run dev                        # inicia o sistema
 ```
 
 Depois abra **http://localhost:3000** no navegador.
+
+Sem `DATABASE_URL`/`DIRECT_URL` preenchidas no `.env`, o passo `prisma migrate
+deploy` não tem o que fazer e o sistema roda sozinho num banco mock em
+memória — dá para navegar e testar as telas, mas nada digitado é salvo entre
+reinícios do servidor. Preencha as duas variáveis (veja a seção "Sobre o
+banco de dados" abaixo) antes de usar o sistema para dados de verdade.
 
 ### Primeiro acesso
 
@@ -131,13 +138,14 @@ variáveis `EXTERNAL_INTEGRATION_*` do `.env.example`. Sem elas, essa
 integração fica desativada e o cadastro manual de montagens continua
 funcionando normalmente — não é um recurso necessário para usar o sistema.
 
-### Se precisar recriar o usuário administrador
+### Se precisar autorizar ou remover um administrador
 
-Se apagar o banco de dados ou quiser recriar o admin padrão:
-
-```bash
-npm run db:seed
-```
+Não existe um usuário admin "padrão" para recriar — a conta é criada
+automaticamente no primeiro login com Google de um e-mail autorizado. Para
+autorizar um novo e-mail, ou remover o acesso de alguém, crie ou apague o
+documento correspondente em Firestore → `adminEmails` (veja o passo 5 da
+seção acima). Isso não desfaz o cadastro do usuário no banco — só some com o
+acesso; se quiser reativar depois, basta recriar o documento.
 
 ## Sobre o banco de dados
 
@@ -156,18 +164,26 @@ escolhido — é lá que fica todo o histórico financeiro da empresa.
 
 ## Publicando o sistema no Vercel
 
-Com o banco Postgres já configurado no `.env`, o deploy é feito subindo este
-projeto (pasta `sistema-montador`) para o Vercel — pela CLI (`vercel`) ou
-conectando um repositório do GitHub. As mesmas variáveis `DATABASE_URL`,
-`DIRECT_URL` e `SESSION_SECRET` do `.env` precisam ser cadastradas nas
-"Environment Variables" do projeto no Vercel. Depois disso, o link gerado
-(ex: `seusistema.vercel.app`) já funciona tanto para o admin quanto para os
-montadores, em qualquer dispositivo com internet.
+Com o banco Postgres já configurado, o deploy é feito subindo este projeto
+para o Vercel — pela CLI (`vercel`) ou conectando um repositório do GitHub.
+As variáveis `DATABASE_URL`, `DIRECT_URL` e `SESSION_SECRET` (mais as do
+Firebase e do Vercel Blob, se for usar esses recursos) precisam ser
+cadastradas nas "Environment Variables" do projeto no Vercel. O build do
+Vercel (script `vercel-build` do `package.json`) já roda `prisma migrate
+deploy` sozinho antes de compilar — não é preciso rodar isso manualmente a
+cada deploy, só na primeira vez que uma nova mudança de schema for
+adicionada ao projeto é que ela sobe automaticamente junto do próximo
+deploy. Depois disso, o link gerado (ex: `seusistema.vercel.app`) já
+funciona tanto para o admin quanto para os montadores, em qualquer
+dispositivo com internet.
 
 ## Estrutura do projeto (para referência técnica)
 
 - `prisma/schema.prisma` — modelo do banco de dados (usuários, lojas,
   comissões, montagens).
+- `prisma.config.ts` — configuração da CLI do Prisma (migrations, conexão).
+- `lib/prisma.ts` — cliente do banco; cai automaticamente para um mock em
+  memória quando `DATABASE_URL` não está configurada.
 - `lib/auth.ts` — login, sessão e proteção de acesso por papel (admin/montador).
 - `lib/actions/` — as ações do sistema (criar montador, criar montagem,
   marcar pagamento, etc).

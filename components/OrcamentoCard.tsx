@@ -12,7 +12,7 @@ import {
   ORCAMENTO_STATUS_LABEL,
 } from "@/lib/format";
 import { atualizarStatusOrcamentoAction, excluirOrcamentoAction } from "@/lib/actions/orcamentos";
-import type { StatusOrcamento } from "@/lib/mock-db/types";
+import type { StatusOrcamento } from "@/app/generated/prisma/client";
 
 export type OrcamentoResumo = {
   id: string;

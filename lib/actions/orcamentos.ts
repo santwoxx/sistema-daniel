@@ -6,7 +6,7 @@ import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { apenasDigitos } from "@/lib/format";
-import type { StatusOrcamento } from "@/lib/mock-db/types";
+import type { StatusOrcamento } from "@/app/generated/prisma/client";
 
 /**
  * Recebe o pedido de orçamento enviado pelo cliente na página pública

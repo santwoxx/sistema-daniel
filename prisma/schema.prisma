@@ -1,0 +1,196 @@
+// Modelo do banco de dados do MontaFácil — Postgres via Prisma.
+// A URL de conexão não fica aqui (Prisma 7): veja prisma.config.ts, que lê
+// DATABASE_URL (pooled, usada em tempo de execução) e DIRECT_URL (conexão
+// direta, usada só pelas migrations) do ambiente.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MONTADOR
+}
+
+enum StatusMontagem {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum TipoOcorrencia {
+  CLIENTE_AUSENTE
+  PECA_DANIFICADA
+  REAGENDAR
+  OUTRO
+}
+
+enum StatusOrcamento {
+  NOVO
+  CONTATADO
+  CONVERTIDO
+  RECUSADO
+}
+
+model User {
+  id             String   @id @default(cuid())
+  nome           String
+  email          String   @unique
+  telefone       String?
+  fotoUrl        String?
+  // Só montadores/colaboradores têm senha (login por e-mail/senha).
+  // Administradores entram só pelo Google e nunca têm este campo preenchido.
+  senha          String?
+  role           Role
+  ativo          Boolean  @default(true)
+  comissaoPadrao Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  montagens          Montagem[]     @relation("MontagemMontador")
+  comissoes          ComissaoLoja[]
+  avaliacoes         Avaliacao[]
+  notasPendentesSugeridas NotaPendente[] @relation("NotaPendenteMontadorSugerido")
+
+  @@map("users")
+}
+
+model Loja {
+  id        String   @id @default(cuid())
+  nome      String
+  telefone  String?
+  endereco  String?
+  // CNPJ é único quando informado, mas várias lojas podem não ter CNPJ
+  // cadastrado ainda (null não conta como duplicado numa constraint única).
+  cnpj      String?  @unique
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  montagens Montagem[]
+  comissoes ComissaoLoja[]
+
+  @@map("lojas")
+}
+
+model ComissaoLoja {
+  id         String @id @default(cuid())
+  montadorId String
+  lojaId     String
+  percentual Float
+
+  montador User @relation(fields: [montadorId], references: [id], onDelete: Cascade)
+  loja     Loja @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  @@unique([montadorId, lojaId])
+  @@map("comissoes_loja")
+}
+
+model Montagem {
+  id                       String          @id @default(cuid())
+  numeroPedido             String?
+  lojaId                   String
+  montadorId               String?
+  clienteNome              String
+  clienteTelefone          String?
+  clienteEndereco          String
+  descricaoServico         String
+  valorServico             Float
+  percentualMontador       Float           @default(0)
+  valorMontador            Float           @default(0)
+  valorAssistencia         Float           @default(0)
+  feitoPorAdm              Boolean         @default(false)
+  dataAgendada             DateTime?
+  status                   StatusMontagem  @default(PENDENTE)
+  pagoPelaLoja             Boolean         @default(false)
+  pagoAoMontador           Boolean         @default(false)
+  observacoes              String?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  concluidoEm              DateTime?
+  fotoProdutoUrl           String?
+  // Assinaturas chegam como data URL base64 (podem passar de 1000
+  // caracteres) — @db.Text evita o limite padrão de varchar do Postgres.
+  assinaturaMontador       String?         @db.Text
+  assinaturaCliente        String?         @db.Text
+  manualUrl                String?
+  manualNomeArquivo        String?
+  manualTipo               String?
+  notificadoCentralSyncEm  DateTime?
+  avaliacaoSolicitadaEm    DateTime?
+
+  loja        Loja        @relation(fields: [lojaId], references: [id])
+  montador    User?       @relation("MontagemMontador", fields: [montadorId], references: [id])
+  avaliacao   Avaliacao?
+  ocorrencias Ocorrencia[]
+
+  @@index([status])
+  @@index([montadorId])
+  @@index([lojaId])
+  @@map("montagens")
+}
+
+model NotaPendente {
+  id                  String   @id @default(cuid())
+  numeroPedido        String?
+  clienteNome         String
+  clienteTelefone     String?
+  clienteEndereco     String
+  descricaoServico    String
+  valorServico        Float?
+  dataAgendada        DateTime?
+  observacoes         String?
+  lojaNomeSugerida    String?
+  lojaCnpjSugerido    String?
+  fotoReferenciaUrl   String?
+  montadorSugeridoId  String?
+  criadaEm            DateTime @default(now())
+
+  montadorSugerido User? @relation("NotaPendenteMontadorSugerido", fields: [montadorSugeridoId], references: [id])
+
+  @@map("notas_pendentes")
+}
+
+model Ocorrencia {
+  id         String         @id @default(cuid())
+  montagemId String
+  tipo       TipoOcorrencia
+  observacao String?
+  fotoUrl    String?
+  criadoEm   DateTime       @default(now())
+
+  montagem Montagem @relation(fields: [montagemId], references: [id], onDelete: Cascade)
+
+  @@map("ocorrencias")
+}
+
+model Avaliacao {
+  id         String   @id @default(cuid())
+  montagemId String   @unique
+  montadorId String
+  estrelas   Int
+  comentario String?
+  criadoEm   DateTime @default(now())
+
+  montagem Montagem @relation(fields: [montagemId], references: [id], onDelete: Cascade)
+  montador User     @relation(fields: [montadorId], references: [id], onDelete: Cascade)
+
+  @@map("avaliacoes")
+}
+
+model Orcamento {
+  id               String          @id @default(cuid())
+  nome             String
+  telefone         String
+  descricao        String?
+  fotoUrl          String?
+  status           StatusOrcamento @default(NOVO)
+  observacoesAdmin String?
+  criadoEm         DateTime        @default(now())
+
+  @@map("orcamentos")
+}
