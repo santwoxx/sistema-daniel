@@ -1,0 +1,22 @@
+{
+  "name": "Águia Montagem de Móveis",
+  "short_name": "Águia",
+  "description": "Gestão financeira, equipe de montadores e orçamentos da Águia Montagem de Móveis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1a2a",
+  "theme_color": "#0b1a2a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

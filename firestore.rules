@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Um documento por e-mail autorizado a entrar como administrador. Para
+    // autorizar alguém: Firebase Console -> Firestore Database -> aba
+    // "Dados" -> coleção "adminEmails" -> "Adicionar documento" -> use o
+    // e-mail da conta Google da pessoa (em minúsculas) como ID do
+    // documento, sem precisar de nenhum campo dentro. Para remover o
+    // acesso de alguém, basta apagar o documento dela. Nada disso exige
+    // editar ou publicar esta regra de novo.
+    match /adminEmails/{email} {
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+      allow write: if false; // só é editado manualmente pelo console
+    }
+
+    // Nega tudo o mais por padrão — o sistema não guarda nenhum outro dado
+    // no Firestore (montagens, financeiro, orçamentos etc. ficam no
+    // Postgres); o Firestore aqui serve só para esta checagem de login.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
