@@ -67,18 +67,13 @@ Depois abra **http://localhost:3000** no navegador.
 
 ### Primeiro acesso
 
-- **Administrador:** entra com e-mail e senha, ou com o botão "Entrar com
-  Google" — que só funciona para e-mails autorizados (veja a seção do
-  Firebase abaixo).
-- **Montador:** entra com e-mail e senha, cadastrados pelo administrador no
-  painel.
-
-O sistema também vem com um usuário administrador de backup
-(`admin@aguia.com`, senha `demo1234`), caso o login com Google dê algum
-problema. Essa senha existe só para o primeiro acesso — o sistema ainda não
-tem uma tela de "trocar minha própria senha", então, por enquanto, trocá-la
-exige acesso direto ao banco de dados (`npx prisma studio`, numa implantação
-com Postgres real).
+- **Administrador:** entra **só** pelo botão "Entrar com Google" — e-mail e
+  senha são recusados para contas com esse papel, mesmo que a conta tenha
+  uma senha cadastrada. Só funciona para e-mails autorizados (veja a seção
+  do Firebase abaixo); sem isso configurado, ninguém consegue entrar como
+  administrador.
+- **Montador/colaborador:** entra com e-mail e senha, cadastrados pelo
+  administrador no painel — nunca pelo Google.
 
 A partir daí, use o painel para cadastrar lojas, montadores e comissões — tudo
 pela própria interface, sem precisar mexer em código.

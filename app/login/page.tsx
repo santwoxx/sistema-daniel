@@ -98,6 +98,9 @@ export default async function LoginPage({
           <div className="rounded-3xl border border-slate-200/60 bg-white p-8 shadow-xl shadow-navy/5">
             {erro ? <Alerta tipo="erro">{erro}</Alerta> : null}
 
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Montador ou colaborador
+            </p>
             <form action={loginAction} className="space-y-4">
               <input type="hidden" name="proximo" value={proximo ?? ""} />
               <Field label="E-mail">
@@ -126,7 +129,7 @@ export default async function LoginPage({
             <div className="my-6 flex items-center gap-3">
               <span className="h-px flex-1 bg-slate-200" />
               <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                ou, se você é o administrador
+                administrador
               </span>
               <span className="h-px flex-1 bg-slate-200" />
             </div>

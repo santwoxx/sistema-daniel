@@ -33,6 +33,13 @@ export async function loginAction(formData: FormData) {
     return;
   }
 
+  // Administrador só entra pelo Google — e-mail/senha é exclusivo para
+  // montadores/colaboradores cadastrados pelo admin no painel.
+  if (user.role === "ADMIN") {
+    erro("Administradores entram com o botão \"Entrar com Google\".");
+    return;
+  }
+
   const senhaValida = await verifyPassword(senha, user.senha);
   if (!senhaValida) {
     erro("E-mail ou senha incorretos.");
@@ -40,7 +47,7 @@ export async function loginAction(formData: FormData) {
   }
 
   await createSession({ sub: user.id, role: user.role, nome: user.nome });
-  redirect(destinoSeguro(proximo, user.role === "ADMIN" ? "/admin" : "/montador"));
+  redirect(destinoSeguro(proximo, "/montador"));
 }
 
 /**
