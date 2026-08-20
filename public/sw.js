@@ -18,11 +18,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Só GET passa por aqui. Reembrulhar um POST (como as chamadas de Server
-  // Action) num novo fetch(event.request) pode falhar com "Failed to
-  // fetch" em alguns navegadores, porque o corpo da requisição original já
-  // foi lido nesse ponto — e não tem nenhum ganho de cache em fazer isso
-  // mesmo para GET hoje, mas evita esse efeito colateral específico.
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request));
+  // Deixa o navegador lidar com a requisição nativamente.
+  // Ter este listener (mesmo vazio) satisfaz os requisitos de PWA para instalação,
+  // mas evita erros de "Failed to fetch" ao repassar requisições cross-origin ou cacheadas.
 });
