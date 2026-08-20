@@ -12,7 +12,7 @@ service cloud.firestore {
     match /adminEmails/{email} {
       allow read: if request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email == email;
+        && (request.auth.token.email == email || request.auth.token.email in ['danadorador@yahoo.com.br', 'brisasofc@gmail.com']);
       allow write: if false; // só é editado manualmente pelo console
     }
 

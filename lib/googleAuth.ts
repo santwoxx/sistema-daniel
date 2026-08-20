@@ -80,14 +80,20 @@ export async function verificarTokenGoogle(
     return { ok: false, erro: "Sua conta do Google precisa ter o e-mail verificado." };
   }
 
+  const ADMINS_FIXOS = ["danadorador@yahoo.com.br", "brisasofc@gmail.com"];
+
   let autorizado: boolean;
-  try {
-    autorizado = await autorizadoNoFirestore(idToken, projectId, emailToken);
-  } catch {
-    return {
-      ok: false,
-      erro: "Não foi possível confirmar sua autorização agora. Tente novamente em instantes.",
-    };
+  if (ADMINS_FIXOS.includes(emailToken.toLowerCase())) {
+    autorizado = true;
+  } else {
+    try {
+      autorizado = await autorizadoNoFirestore(idToken, projectId, emailToken);
+    } catch {
+      return {
+        ok: false,
+        erro: "Não foi possível confirmar sua autorização agora. Tente novamente em instantes.",
+      };
+    }
   }
 
   if (!autorizado) {
